@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>PharmDetect</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.js"></script>
+<style>
+  :root{
+    --ink:#0E1A17; --ink-soft:#31463F; --paper:#F3F6F3; --panel:#FFFFFF; --line:rgba(14,26,23,0.12);
+    --accent:#0E7A5F; --accent-soft:#DCF0E6; --danger:#B4402A; --danger-soft:#F6E0DA;
+    --warn:#B07A1E; --warn-soft:#F5EAD5; --mono:'IBM Plex Mono',monospace; --sans:'Space Grotesk',sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:var(--sans);background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;
+       padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom);}
+  .app{max-width:560px;margin:0 auto;padding:26px 20px 70px;}
+  .hero{display:flex;align-items:center;gap:12px;border-bottom:2px solid var(--ink);padding-bottom:16px;margin-bottom:20px;}
+  .glyph{width:36px;height:36px;border:2px solid var(--ink);border-radius:8px;display:grid;place-items:center;font-family:var(--mono);font-size:12px;font-weight:600;flex-shrink:0;}
+  .hero h1{font-size:21px;margin:0;font-weight:700;}
+  .hero p{margin:2px 0 0;font-size:12.5px;color:var(--ink-soft);}
+  .badge{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10.5px;background:var(--ink);color:var(--paper);padding:2px 8px;border-radius:20px;margin-bottom:10px;}
+  .badge .dot{width:7px;height:7px;border-radius:50%;background:#7FE0B8;}
+  .badge.offline .dot{background:#F0A0A0;}
+  .badge.engine{background:var(--accent);}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:18px;}
+  .card h2{font-size:14px;margin:0 0 4px;font-weight:600;}
+  .card .sub{font-size:12px;color:var(--ink-soft);margin:0 0 14px;}
+  label{display:block;font-size:12px;color:var(--ink-soft);margin:12px 0 4px;}
+  label:first-of-type{margin-top:0;}
+  input{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:6px;font-family:var(--sans);font-size:13.5px;background:var(--paper);color:var(--ink);}
+  button.btn{font-family:var(--sans);font-size:13.5px;font-weight:600;padding:10px 16px;border-radius:6px;border:1px solid var(--ink);background:var(--ink);color:var(--paper);cursor:pointer;}
+  button.btn.secondary{background:var(--panel);color:var(--ink);}
+  button.btn.ghost{background:none;border-color:var(--line);color:var(--ink-soft);}
+  button.btn:disabled{opacity:.5;cursor:not-allowed;}
+  button.btn.scan-main{
+    width:100%;padding:16px;font-size:16px;border-radius:10px;
+    background:var(--accent);border-color:var(--accent);
+    display:flex;align-items:center;justify-content:center;gap:10px;
+  }
+  button.btn.scan-main svg{width:20px;height:20px;}
+  .btn-row{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;}
+  .scan-stage{background:var(--ink);border-radius:10px;overflow:hidden;position:relative;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;margin-top:14px;}
+  .scan-stage video{width:100%;height:100%;object-fit:cover;}
+  .placeholder{color:#8FA79D;font-size:13px;text-align:center;padding:20px;}
+  .scan-frame{position:absolute;inset:14%;border:2px solid rgba(255,255,255,.75);border-radius:12px;box-shadow:0 0 0 999px rgba(0,0,0,.28);pointer-events:none;display:none;}
+  .result-banner{margin-top:14px;padding:18px;border-radius:10px;border:2px solid var(--line);display:none;}
+  .result-banner.show{display:block;}
+  .result-banner .status{font-size:22px;font-weight:800;font-family:var(--mono);letter-spacing:0.02em;}
+  .result-banner .detail{font-size:13px;margin-top:6px;color:var(--ink-soft);}
+  .result-banner.original{background:var(--accent-soft);border-color:var(--accent);}
+  .result-banner.original .status{color:var(--accent);}
+  .result-banner.expired{background:var(--danger-soft);border-color:var(--danger);}
+  .result-banner.expired .status{color:var(--danger);}
+  .result-banner.counterfeit{background:var(--danger-soft);border-color:var(--danger);}
+  .result-banner.counterfeit .status{color:var(--danger);}
+  .result-banner.pending{background:#EAF0EC;border-color:#4E6459;}
+  .result-banner.pending .status{color:#2E453B;}
+  .confirm-row{display:flex;gap:10px;margin-top:14px;}
+  .confirm-row button{flex:1;padding:12px;}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line);}
+  td.mono,th.mono{font-family:var(--mono);font-size:11.5px;}
+  .pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:600;font-family:var(--mono);}
+  .pill.original{background:var(--accent-soft);color:var(--accent);}
+  .pill.expired,.pill.counterfeit{background:var(--danger-soft);color:var(--danger);}
+  .empty{padding:16px 4px;text-align:center;color:var(--ink-soft);font-size:12.5px;}
+  .foot-note{font-size:11px;color:var(--ink-soft);margin-top:6px;}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:8px;font-size:12.5px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:50;max-width:85%;text-align:center;}
+  .toast.show{opacity:1;}
+  details{margin-bottom:18px;}
+  summary{cursor:pointer;font-size:12.5px;color:var(--ink-soft);font-weight:600;}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="hero">
+    <div class="glyph">Rx</div>
+    <div>
+      <h1>PharmDetect</h1>
+      <p>Scan a medication's QR code to verify it before you buy.</p>
+    </div>
+  </div>
+
+  <div class="badge" id="conn-badge"><span class="dot"></span><span id="conn-text">Checking connection…</span></div>
+  <div class="badge engine" id="engine-badge">Scan engine: checking…</div>
+
+  <details>
+    <summary>Backend connection settings</summary>
+    <div class="card" style="margin-top:10px;">
+      <label for="f-api-url">Pharmaceutical Database API URL</label>
+      <input id="f-api-url" placeholder="https://your-pharma-server.example.com/api">
+      <label for="f-api-key">API key (only if the server requires one)</label>
+      <input id="f-api-key" placeholder="optional">
+      <div class="btn-row">
+        <button class="btn secondary" id="btn-save-conn">Save &amp; reconnect</button>
+      </div>
+      <div class="foot-note">For a real deployment, hardcode your production URL in the <code>DEFAULT_API_BASE_URL</code> constant near the top of this file's script.</div>
+    </div>
+  </details>
+
+  <div class="card">
+    <h2>Scan a medication</h2>
+    <p class="sub">Reads the QR code on the medication bottle or sealed package using a dedicated scan engine — not the phone's built-in camera app, since many camera apps don't decode QR codes at all.</p>
+
+    <button class="btn scan-main" id="btn-camera">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10"/></svg>
+      <span id="scan-btn-label">Scan</span>
+    </button>
+
+    <div class="scan-stage" id="scan-stage">
+      <div class="placeholder" id="scan-placeholder">Camera is off.<br>Press "Scan" to read a medication's QR code.</div>
+      <video id="video" playsinline muted style="display:none;"></video>
+      <div class="scan-frame" id="scan-frame"></div>
+    </div>
+    <canvas id="canvas" style="display:none;"></canvas>
+
+    <div class="btn-row">
+      <button class="btn secondary" id="btn-upload-trigger">Upload QR image</button>
+      <input type="file" id="file-upload" accept="image/*" style="display:none;">
+    </div>
+
+    <label for="f-manual">Or enter a Product ID manually</label>
+    <input id="f-manual" placeholder="e.g. 9931204552">
+    <div class="btn-row">
+      <button class="btn secondary" id="btn-manual-scan">Look up</button>
+    </div>
+
+    <label for="f-gps">Sale location (GPS)</label>
+    <input id="f-gps" placeholder="lat, lng">
+  </div>
+
+  <div class="result-banner" id="result-banner">
+    <div class="status" id="result-status">—</div>
+    <div class="detail" id="result-detail"></div>
+    <div class="confirm-row" id="confirm-row" style="display:none;">
+      <button class="btn" id="btn-buy">Buy</button>
+      <button class="btn secondary" id="btn-dont-buy">Don't buy</button>
+    </div>
+  </div>
+  <div class="empty" id="result-empty">No medication scanned yet.</div>
+
+  <div class="card">
+    <h2>Scan history (this device session)</h2>
+    <table>
+      <thead><tr><th class="mono">Product ID</th><th>Result</th><th>Time</th></tr></thead>
+      <tbody id="history-body"></tbody>
+    </table>
+    <div class="empty" id="history-empty">Nothing scanned yet.</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="app.bundle.js"></script>
+
+</body>
+</html>

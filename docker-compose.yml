@@ -1,0 +1,41 @@
+# For local development/testing only. In production, deploy pharma-server and
+# counterfeit-server on SEPARATE hosts (see render.yaml, or run each
+# Dockerfile independently) — running them together here is just convenient
+# for testing the cross-server relay on one machine before you split them.
+services:
+  pharma-server:
+    build: ./pharma-server
+    ports:
+      - "3000:3000"
+    volumes:
+      - pharma_data:/data
+    environment:
+      - PORT=3000
+      - DATA_DIR=/data
+      - API_KEY=${PHARMA_API_KEY:-}
+      - COUNTERFEIT_API_URL=http://counterfeit-server:4000
+      - COUNTERFEIT_API_KEY=${COUNTERFEIT_API_KEY:-}
+    depends_on:
+      - counterfeit-server
+
+  counterfeit-server:
+    build: ./counterfeit-server
+    ports:
+      - "4000:4000"
+    volumes:
+      - counterfeit_data:/data
+    environment:
+      - PORT=4000
+      - DATA_DIR=/data
+      - API_KEY=${COUNTERFEIT_API_KEY:-}
+      - MOH_AGENCY_EMAIL=${MOH_AGENCY_EMAIL:-}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - REPORT_FROM=${REPORT_FROM:-}
+      - REPORT_FREQUENCY=${REPORT_FREQUENCY:-monthly}
+
+volumes:
+  pharma_data:
+  counterfeit_data:

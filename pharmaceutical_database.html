@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pharmaceutical Database — PharmDetect</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root{
+    --ink:#0E1A17; --ink-soft:#31463F; --paper:#F3F6F3; --panel:#FFFFFF; --line:rgba(14,26,23,0.12);
+    --accent:#0E7A5F; --accent-soft:#DCF0E6; --warn:#B07A1E; --warn-soft:#F5EAD5; --danger:#B4402A; --danger-soft:#F6E0DA;
+    --mono:'IBM Plex Mono',monospace; --sans:'Space Grotesk',sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:var(--sans);background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;}
+  .app{max-width:1000px;margin:0 auto;padding:26px 22px 70px;}
+  .hero{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:2px solid var(--ink);padding-bottom:16px;margin-bottom:14px;}
+  .hero-left{display:flex;align-items:center;gap:12px;}
+  .glyph{width:36px;height:36px;border:2px solid var(--ink);border-radius:8px;display:grid;place-items:center;font-family:var(--mono);font-size:12px;font-weight:600;flex-shrink:0;}
+  .hero h1{font-size:22px;margin:0;font-weight:700;}
+  .hero p{margin:2px 0 0;font-size:12.5px;color:var(--ink-soft);}
+  .session-box{display:flex;align-items:center;gap:10px;font-size:12.5px;}
+  .session-box .who{text-align:right;}
+  .session-box .who .name{font-weight:600;}
+  .session-box .who .email{color:var(--ink-soft);font-size:11px;}
+  .badge{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10.5px;background:var(--ink);color:var(--paper);padding:2px 8px;border-radius:20px;margin-bottom:18px;}
+  .badge .dot{width:7px;height:7px;border-radius:50%;background:#7FE0B8;}
+  .badge.offline .dot{background:#F0A0A0;}
+  details{margin-bottom:18px;}
+  summary{cursor:pointer;font-size:12.5px;color:var(--ink-soft);font-weight:600;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  @media(max-width:760px){.grid2{grid-template-columns:1fr;}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px;margin-bottom:20px;}
+  .card h2{font-size:15px;margin:0 0 4px;font-weight:600;}
+  .card .sub{font-size:12.5px;color:var(--ink-soft);margin:0 0 16px;}
+  label{display:block;font-size:12px;color:var(--ink-soft);margin:12px 0 4px;}
+  label:first-of-type{margin-top:0;}
+  input{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:6px;font-family:var(--sans);font-size:13.5px;background:var(--paper);color:var(--ink);}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  button.btn{font-family:var(--sans);font-size:13.5px;font-weight:600;padding:10px 16px;border-radius:6px;border:1px solid var(--ink);background:var(--ink);color:var(--paper);cursor:pointer;}
+  button.btn.secondary{background:var(--panel);color:var(--ink);}
+  button.btn.ghost{background:none;border-color:var(--line);color:var(--ink-soft);}
+  button.btn:disabled{opacity:.5;cursor:not-allowed;}
+  .btn-row{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);}
+  td.mono,th.mono{font-family:var(--mono);font-size:12px;}
+  .table-wrap{overflow-x:auto;margin-top:6px;}
+  .pill{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;font-family:var(--mono);}
+  .pill.original{background:var(--accent-soft);color:var(--accent);}
+  .pill.expired{background:var(--warn-soft);color:var(--warn);}
+  .pill.unsold{background:#EEF2EF;color:var(--ink-soft);}
+  .qr-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;margin-top:14px;}
+  .qr-item{border:1px solid var(--line);border-radius:8px;padding:10px;text-align:center;background:var(--paper);}
+  .qr-item .box{background:#fff;padding:6px;border-radius:4px;display:inline-block;}
+  .qr-item .pid{font-family:var(--mono);font-size:10.5px;margin-top:6px;word-break:break-all;color:var(--ink-soft);}
+  .empty{padding:22px 10px;text-align:center;color:var(--ink-soft);font-size:13px;}
+  .foot-note{font-size:11.5px;color:var(--ink-soft);margin-top:6px;}
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:11px 18px;border-radius:8px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:50;max-width:85%;text-align:center;}
+  .toast.show{opacity:1;}
+  .section-title{font-size:13px;font-weight:600;margin:22px 0 4px;}
+  .error-text{color:var(--danger);font-size:12.5px;margin-top:8px;display:none;}
+  .error-text.show{display:block;}
+  .auth-wrap{max-width:420px;margin:60px auto;}
+  .tabs{display:flex;gap:0;margin-bottom:18px;border:1px solid var(--line);border-radius:8px;overflow:hidden;}
+  .tabs button{flex:1;padding:10px;border:none;background:var(--panel);font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;color:var(--ink-soft);}
+  .tabs button.active{background:var(--ink);color:var(--paper);}
+</style>
+</head>
+<body>
+<div class="app" id="auth-screen">
+  <div class="hero">
+    <div class="hero-left">
+      <div class="glyph">Rx</div>
+      <div>
+        <h1>Pharmaceutical Database</h1>
+        <p>PharmDetect — manufacturer sign-in</p>
+      </div>
+    </div>
+  </div>
+  <div class="badge" id="conn-badge"><span class="dot"></span><span id="conn-text">Checking connection…</span></div>
+
+  <details>
+    <summary>Backend connection settings</summary>
+    <div class="card" style="margin-top:10px;">
+      <label for="f-api-url">Pharmaceutical Database API URL</label>
+      <input id="f-api-url" placeholder="https://your-pharma-server.example.com/api">
+      <div class="btn-row"><button class="btn secondary" id="btn-save-conn">Save &amp; reconnect</button></div>
+    </div>
+  </details>
+
+  <div class="auth-wrap">
+    <div class="card">
+      <div class="tabs">
+        <button id="tab-login" class="active">Log in</button>
+        <button id="tab-register">Register company</button>
+      </div>
+
+      <div id="login-form">
+        <label for="li-email">Email</label>
+        <input id="li-email" type="email" placeholder="you@yourcompany.com">
+        <label for="li-password">Password</label>
+        <input id="li-password" type="password" placeholder="••••••••">
+        <div class="btn-row"><button class="btn" id="btn-login" style="width:100%;">Log in</button></div>
+      </div>
+
+      <div id="register-form" style="display:none;">
+        <label for="re-company">Company name</label>
+        <input id="re-company" placeholder="e.g. Acme Pharmaceuticals">
+        <label for="re-mfgid">Manufacturer ID</label>
+        <input id="re-mfgid" placeholder="e.g. MFG-2201 (unique to your company)">
+        <label for="re-email">Email</label>
+        <input id="re-email" type="email" placeholder="you@yourcompany.com">
+        <label for="re-password">Password</label>
+        <input id="re-password" type="password" placeholder="At least 8 characters">
+        <div class="btn-row"><button class="btn" id="btn-register" style="width:100%;">Create account</button></div>
+      </div>
+
+      <div class="error-text" id="auth-error"></div>
+    </div>
+  </div>
+</div>
+
+<div class="app" id="main-screen" style="display:none;">
+  <div class="hero">
+    <div class="hero-left">
+      <div class="glyph">Rx</div>
+      <div>
+        <h1>Pharmaceutical Database</h1>
+        <p>PharmDetect — register medications and generate QR labels.</p>
+      </div>
+    </div>
+    <div class="session-box">
+      <div class="who"><div class="name" id="session-company">—</div><div class="email" id="session-email">—</div></div>
+      <button class="btn ghost" id="btn-logout">Log out</button>
+    </div>
+  </div>
+  <div class="badge" id="conn-badge2"><span class="dot"></span><span id="conn-text2">Checking connection…</span></div>
+
+  <div class="grid2">
+    <div class="card">
+      <h2>Register a medication</h2>
+      <p class="sub">Creates a unique numeric Product ID under your company's account and the QR label to emboss on the bottle or sealed package.</p>
+      <label for="f-name">Medication name</label>
+      <input id="f-name" placeholder="e.g. Amoxicillin 250mg (30ct)">
+      <label for="f-batch">Batch / lot number</label>
+      <input id="f-batch" placeholder="e.g. B2026-014">
+      <div class="row2">
+        <div><label for="f-year">Year of manufacture</label><input id="f-year" type="number" placeholder="2026"></div>
+        <div><label for="f-life">Shelf life (years)</label><input id="f-life" type="number" placeholder="2"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" id="btn-register-med">Register medication</button>
+        <button class="btn secondary" id="btn-demo">Load demo dataset</button>
+        <button class="btn ghost" id="btn-reset">Clear my medications</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Newly generated label</h2>
+      <p class="sub">This is the QR code embossed on the bottle or sealed package.</p>
+      <div id="new-qr-holder" style="min-height:190px;display:flex;align-items:center;justify-content:center;">
+        <span class="empty">Register a medication to generate its QR label</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Your registered medications</div>
+  <div class="card">
+    <div class="btn-row" style="margin-top:0;margin-bottom:14px;">
+      <button class="btn ghost" id="btn-refresh">Refresh</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Medication</th><th>Batch</th><th class="mono">Product ID</th><th>Year</th><th>Shelf life</th>
+          <th>Status</th><th>Sold</th><th>First sale date</th><th>First sale GPS</th><th>Clone attempts</th>
+        </tr></thead>
+        <tbody id="pharma-table-body"></tbody>
+      </table>
+      <div class="empty" id="pharma-empty" style="display:none;">You haven't registered any medications yet.</div>
+    </div>
+    <div class="foot-note">"Clone attempts" counts how many times this Product ID was scanned again after its first sale — each one is automatically reported to the separately hosted Counterfeit and Expired Product (CEP) Database by the Detector App.</div>
+  </div>
+
+  <div class="section-title">Your QR labels</div>
+  <div class="qr-list" id="qr-gallery"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  const DEFAULT_API_BASE_URL = 'http://localhost:3000/api';
+  let API_BASE_URL = DEFAULT_API_BASE_URL;
+  let TOKEN = null;
+  let MANUFACTURER = null;
+  const $ = id => document.getElementById(id);
+
+  function saveSession(){ try{ localStorage.setItem('pharmdetect_token', TOKEN || ''); }catch(e){} }
+  function loadSession(){ try{ return localStorage.getItem('pharmdetect_token') || null; }catch(e){ return null; } }
+  function clearSession(){ try{ localStorage.removeItem('pharmdetect_token'); }catch(e){} }
+
+  function authHeaders(){
+    const h = { 'Content-Type': 'application/json' };
+    if (TOKEN) h['Authorization'] = 'Bearer ' + TOKEN;
+    return h;
+  }
+  async function apiGet(path){
+    const res = await fetch(API_BASE_URL + path, { headers: authHeaders() });
+    const data = await res.json().catch(()=>null);
+    if(!res.ok) throw new Error((data && data.error) || 'Request failed (' + res.status + ')');
+    return data;
+  }
+  async function apiPost(path, body){
+    const res = await fetch(API_BASE_URL + path, { method:'POST', headers: authHeaders(), body: JSON.stringify(body) });
+    const data = await res.json().catch(()=>null);
+    if(!res.ok) throw new Error((data && data.error) || 'Request failed (' + res.status + ')');
+    return data;
+  }
+  async function apiDelete(path){
+    const res = await fetch(API_BASE_URL + path, { method:'DELETE', headers: authHeaders() });
+    const data = await res.json().catch(()=>null);
+    if(!res.ok) throw new Error((data && data.error) || 'Request failed (' + res.status + ')');
+    return data;
+  }
+
+  async function checkConnection(){
+    for (const id of ['conn-badge','conn-badge2']){
+      const badge = $(id); if(!badge) continue;
+      const text = badge.querySelector('span:last-child');
+      try{
+        const res = await fetch(API_BASE_URL.replace(/\/api\/?$/, '/api/health'));
+        if(!res.ok) throw new Error('bad status');
+        badge.classList.remove('offline'); text.textContent = 'Connected to ' + API_BASE_URL;
+      }catch(e){
+        badge.classList.add('offline'); text.textContent = 'Not connected — check the API base URL';
+      }
+    }
+  }
+
+  function showToast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000); }
+  function escapeHtml(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function showAuthError(msg){ const e=$('auth-error'); e.textContent=msg; e.classList.add('show'); }
+  function clearAuthError(){ $('auth-error').classList.remove('show'); }
+
+  function showMain(){
+    if (MANUFACTURER.role && MANUFACTURER.role !== 'manufacturer'){
+      showToast('This is the manufacturer-facing app. Admins and the superuser should use pharma_admin.html.');
+      TOKEN = null; MANUFACTURER = null; clearSession();
+      showAuth();
+      return;
+    }
+    $('auth-screen').style.display = 'none';
+    $('main-screen').style.display = 'block';
+    $('session-company').textContent = MANUFACTURER.companyName;
+    $('session-email').textContent = MANUFACTURER.email;
+    renderAll();
+  }
+  function showAuth(){
+    $('auth-screen').style.display = 'block';
+    $('main-screen').style.display = 'none';
+  }
+
+  // ---------- auth ----------
+  $('tab-login').addEventListener('click', ()=>{
+    $('tab-login').classList.add('active'); $('tab-register').classList.remove('active');
+    $('login-form').style.display='block'; $('register-form').style.display='none';
+    clearAuthError();
+  });
+  $('tab-register').addEventListener('click', ()=>{
+    $('tab-register').classList.add('active'); $('tab-login').classList.remove('active');
+    $('register-form').style.display='block'; $('login-form').style.display='none';
+    clearAuthError();
+  });
+
+  $('btn-login').addEventListener('click', async ()=>{
+    clearAuthError();
+    const email = $('li-email').value.trim(), password = $('li-password').value;
+    if(!email || !password){ showAuthError('Enter your email and password.'); return; }
+    try{
+      const data = await apiPost('/auth/login', { email, password });
+      TOKEN = data.token; MANUFACTURER = data.manufacturer; saveSession();
+      showMain();
+    }catch(e){ showAuthError(e.message); }
+  });
+
+  $('btn-register').addEventListener('click', async ()=>{
+    clearAuthError();
+    const companyName = $('re-company').value.trim();
+    const manufacturerId = $('re-mfgid').value.trim();
+    const email = $('re-email').value.trim();
+    const password = $('re-password').value;
+    if(!companyName || !manufacturerId || !email || !password){ showAuthError('Fill in all fields.'); return; }
+    try{
+      const data = await apiPost('/auth/register', { email, password, companyName, manufacturerId });
+      showAuthError(''); clearAuthError();
+      $('re-company').value=''; $('re-mfgid').value=''; $('re-email').value=''; $('re-password').value='';
+      showToast(data.note || 'Registration received — awaiting administrator approval.');
+      $('tab-login').click();
+    }catch(e){ showAuthError(e.message); }
+  });
+
+  $('btn-logout').addEventListener('click', ()=>{
+    TOKEN = null; MANUFACTURER = null; clearSession();
+    showAuth();
+  });
+
+  $('btn-save-conn').addEventListener('click', ()=>{
+    const url = $('f-api-url').value.trim();
+    API_BASE_URL = (url || DEFAULT_API_BASE_URL).replace(/\/$/, '');
+    checkConnection();
+    showToast('Connection settings saved for this session.');
+  });
+
+  // ---------- medications ----------
+  async function renderAll(){
+    let meds = [];
+    try{ meds = await apiGet('/medications'); }
+    catch(e){
+      if(String(e.message).toLowerCase().includes('invalid or expired session')){ showToast('Session expired — please log in again.'); $('btn-logout').click(); return; }
+      showToast('Could not load your medications: ' + e.message);
+    }
+
+    const body = $('pharma-table-body'); body.innerHTML='';
+    $('pharma-empty').style.display = meds.length ? 'none' : 'block';
+    meds.slice().reverse().forEach(m=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${escapeHtml(m.medicationName)}</td>
+        <td class="mono">${escapeHtml(m.batchNumber || '—')}</td>
+        <td class="mono">${m.productId}</td>
+        <td>${m.yearOfManufacture}</td>
+        <td>${m.expectedLifespan}y</td>
+        <td>${m.expired ? '<span class="pill expired">Expired</span>' : '<span class="pill original">Within shelf life</span>'}</td>
+        <td>${m.sold ? '<span class="pill original">Yes</span>' : '<span class="pill unsold">No</span>'}</td>
+        <td class="mono">${m.firstSaleDate || '—'}</td>
+        <td class="mono">${m.firstSaleGps || '—'}</td>
+        <td class="mono">${m.cloneAttempts || 0}</td>
+      `;
+      body.appendChild(tr);
+    });
+
+    const gallery = $('qr-gallery'); gallery.innerHTML='';
+    meds.slice().reverse().forEach(m=>{
+      const item = document.createElement('div');
+      item.className = 'qr-item';
+      const boxId = 'qr-' + m.productId;
+      item.innerHTML = `<div class="box" id="${boxId}"></div><div class="pid">${m.productId}</div>
+        <button class="btn ghost dl-btn" data-id="${m.productId}" style="width:100%;font-size:11px;padding:6px;margin-top:6px;">Download PNG</button>`;
+      gallery.appendChild(item);
+      new QRCode(document.getElementById(boxId), { text: m.productId, width: 92, height: 92 });
+    });
+    gallery.querySelectorAll('.dl-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const box = document.getElementById('qr-' + btn.dataset.id);
+        const img = box.querySelector('img');
+        const canvasEl = box.querySelector('canvas');
+        const dataUrl = img ? img.src : (canvasEl ? canvasEl.toDataURL('image/png') : null);
+        if(!dataUrl){ showToast('Could not read that QR image.'); return; }
+        const a = document.createElement('a');
+        a.href = dataUrl; a.download = `qr_${btn.dataset.id}.png`; a.click();
+      });
+    });
+  }
+
+  $('btn-register-med').addEventListener('click', async ()=>{
+    const name = $('f-name').value.trim();
+    const batch = $('f-batch').value.trim();
+    const year = $('f-year').value;
+    const life = $('f-life').value;
+    if(!name || !year || !life){ showToast('Fill in medication name, year and shelf life.'); return; }
+    let record;
+    try{
+      record = await apiPost('/medications', { medicationName: name, batchNumber: batch || null, yearOfManufacture: Number(year), expectedLifespan: Number(life) });
+    }catch(e){ showToast('Registration failed: ' + e.message); return; }
+
+    await renderAll();
+    $('f-name').value=''; $('f-batch').value=''; $('f-year').value=''; $('f-life').value='';
+
+    $('new-qr-holder').innerHTML = '';
+    const wrap = document.createElement('div'); wrap.style.textAlign='center';
+    const box = document.createElement('div'); box.style.display='inline-block'; box.style.background='#fff'; box.style.padding='10px'; box.style.borderRadius='6px';
+    wrap.appendChild(box);
+    const pidLabel = document.createElement('div'); pidLabel.className='foot-note'; pidLabel.style.marginTop='8px'; pidLabel.style.fontFamily='var(--mono)';
+    pidLabel.textContent = 'Product ID: ' + record.productId;
+    wrap.appendChild(pidLabel);
+    $('new-qr-holder').appendChild(wrap);
+    new QRCode(box, { text: record.productId, width: 140, height: 140 });
+    showToast('Medication registered and QR label generated.');
+  });
+
+  $('btn-demo').addEventListener('click', async ()=>{
+    const y = new Date().getFullYear();
+    const demo = [
+      { medicationName:'Amoxicillin 250mg (30ct)', batchNumber:'B2026-014', yearOfManufacture:y, expectedLifespan:2 },
+      { medicationName:'Amoxicillin 250mg (30ct)', batchNumber:'B2021-002', yearOfManufacture:y-4, expectedLifespan:2 },
+      { medicationName:'Paracetamol 500mg (24ct)', batchNumber:'B2025-091', yearOfManufacture:y-1, expectedLifespan:3 },
+      { medicationName:'Metformin 500mg (60ct)', batchNumber:'B2026-055', yearOfManufacture:y, expectedLifespan:2 }
+    ];
+    try{ for(const d of demo){ await apiPost('/medications', d); } }
+    catch(e){ showToast('Demo load failed: ' + e.message); return; }
+    await renderAll();
+    showToast('Demo dataset loaded under your account. Copy a Product ID into the Detector App — scan it twice to see the clone rule trigger.');
+  });
+
+  $('btn-reset').addEventListener('click', async ()=>{
+    if(!confirm('Clear all of YOUR registered medications? This does not affect other manufacturers or the CEP Database.')) return;
+    try{ await apiDelete('/medications'); }
+    catch(e){ showToast('Reset failed: ' + e.message); return; }
+    await renderAll();
+    $('new-qr-holder').innerHTML = '<span class="empty">Register a medication to generate its QR label</span>';
+    showToast('Your medications have been cleared.');
+  });
+
+  $('btn-refresh').addEventListener('click', renderAll);
+
+  // ---------- init ----------
+  $('f-api-url').value = DEFAULT_API_BASE_URL;
+  checkConnection();
+
+  const existingToken = loadSession();
+  if (existingToken){
+    TOKEN = existingToken;
+    apiGet('/auth/me').then(m => { MANUFACTURER = m; showMain(); })
+      .catch(()=> { clearSession(); showAuth(); });
+  } else {
+    showAuth();
+  }
+})();
+</script>
+</body>
+</html>

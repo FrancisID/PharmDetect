@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">PharmDetect</string>
+    <string name="title_activity_main">PharmDetect</string>
+    <string name="package_name">com.pharmdetect.app</string>
+    <string name="custom_url_scheme">com.pharmdetect.app</string>
+</resources>

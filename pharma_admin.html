@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Pharmaceutical Database — PharmDetect</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0E1A17; --ink-soft:#31463F; --paper:#F3F6F3; --panel:#FFFFFF; --line:rgba(14,26,23,0.12);
+    --accent:#0E7A5F; --accent-soft:#DCF0E6; --warn:#B07A1E; --warn-soft:#F5EAD5; --danger:#B4402A; --danger-soft:#F6E0DA;
+    --gold:#8A5A00; --gold-soft:#F3E7C8;
+    --mono:'IBM Plex Mono',monospace; --sans:'Space Grotesk',sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:var(--sans);background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;}
+  .app{max-width:1080px;margin:0 auto;padding:26px 22px 70px;}
+  .hero{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:2px solid var(--ink);padding-bottom:16px;margin-bottom:14px;}
+  .hero-left{display:flex;align-items:center;gap:12px;}
+  .glyph{width:36px;height:36px;border:2px solid var(--ink);border-radius:8px;display:grid;place-items:center;font-family:var(--mono);font-size:12px;font-weight:600;flex-shrink:0;}
+  .hero h1{font-size:21px;margin:0;font-weight:700;}
+  .hero p{margin:2px 0 0;font-size:12.5px;color:var(--ink-soft);}
+  .session-box{display:flex;align-items:center;gap:10px;font-size:12.5px;}
+  .session-box .who{text-align:right;}
+  .session-box .who .email{font-weight:600;}
+  .session-box .who .role{color:var(--ink-soft);font-size:11px;font-family:var(--mono);text-transform:uppercase;}
+  .session-box .who .role.superuser{color:var(--gold);}
+  .badge{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10.5px;background:var(--ink);color:var(--paper);padding:2px 8px;border-radius:20px;margin-bottom:18px;}
+  .badge .dot{width:7px;height:7px;border-radius:50%;background:#7FE0B8;}
+  .badge.offline .dot{background:#F0A0A0;}
+  details{margin-bottom:18px;}
+  summary{cursor:pointer;font-size:12.5px;color:var(--ink-soft);font-weight:600;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px;margin-bottom:20px;}
+  .card.superuser{border-color:var(--gold);background:linear-gradient(0deg,var(--panel),var(--gold-soft) 500%);}
+  .card h2{font-size:15px;margin:0 0 4px;font-weight:600;display:flex;align-items:center;gap:8px;}
+  .card .sub{font-size:12.5px;color:var(--ink-soft);margin:0 0 16px;}
+  .tag-su{font-family:var(--mono);font-size:9.5px;background:var(--gold);color:#fff;padding:2px 7px;border-radius:10px;}
+  label{display:block;font-size:12px;color:var(--ink-soft);margin:12px 0 4px;}
+  label:first-of-type{margin-top:0;}
+  input,select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:6px;font-family:var(--sans);font-size:13.5px;background:var(--paper);color:var(--ink);}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  button.btn{font-family:var(--sans);font-size:13px;font-weight:600;padding:8px 14px;border-radius:6px;border:1px solid var(--ink);background:var(--ink);color:var(--paper);cursor:pointer;}
+  button.btn.secondary{background:var(--panel);color:var(--ink);}
+  button.btn.ghost{background:none;border-color:var(--line);color:var(--ink-soft);}
+  button.btn.danger{background:var(--danger);border-color:var(--danger);color:#fff;}
+  button.btn.approve{background:var(--accent);border-color:var(--accent);color:#fff;}
+  button.btn:disabled{opacity:.5;cursor:not-allowed;}
+  button.btn.small{padding:5px 10px;font-size:11.5px;}
+  .btn-row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  th,td{text-align:left;padding:8px 7px;border-bottom:1px solid var(--line);vertical-align:middle;}
+  td.mono,th.mono{font-family:var(--mono);font-size:11.5px;}
+  .table-wrap{overflow-x:auto;margin-top:6px;}
+  .pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:600;font-family:var(--mono);}
+  .pill.pending{background:var(--warn-soft);color:var(--warn);}
+  .pill.approved{background:var(--accent-soft);color:var(--accent);}
+  .pill.rejected{background:var(--danger-soft);color:var(--danger);}
+  .empty{padding:18px 8px;text-align:center;color:var(--ink-soft);font-size:12.5px;}
+  .foot-note{font-size:11px;color:var(--ink-soft);margin-top:6px;}
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:11px 18px;border-radius:8px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:50;max-width:85%;text-align:center;}
+  .toast.show{opacity:1;}
+  .error-text{color:var(--danger);font-size:12.5px;margin-top:8px;display:none;}
+  .error-text.show{display:block;}
+  .auth-wrap{max-width:420px;margin:60px auto;}
+  .modal-backdrop{position:fixed;inset:0;background:rgba(14,26,23,.45);display:none;align-items:center;justify-content:center;z-index:60;padding:20px;}
+  .modal-backdrop.show{display:flex;}
+  .modal{background:var(--panel);border-radius:10px;padding:22px;max-width:440px;width:100%;max-height:90vh;overflow-y:auto;}
+  .modal h3{margin:0 0 4px;font-size:15px;}
+  .modal .sub{font-size:12px;color:var(--ink-soft);margin:0 0 14px;}
+  .section-title{font-size:13px;font-weight:600;margin:26px 0 4px;}
+</style>
+</head>
+<body>
+<div class="app" id="auth-screen">
+  <div class="hero">
+    <div class="hero-left">
+      <div class="glyph">Rx</div>
+      <div>
+        <h1>Pharmaceutical Database — Admin</h1>
+        <p>PharmDetect — administrator and superuser sign-in.</p>
+      </div>
+    </div>
+  </div>
+  <div class="badge" id="conn-badge"><span class="dot"></span><span id="conn-text">Checking connection…</span></div>
+
+  <details>
+    <summary>Backend connection settings</summary>
+    <div class="card" style="margin-top:10px;">
+      <label for="f-api-url">Pharmaceutical Database API URL</label>
+      <input id="f-api-url" placeholder="https://your-pharma-server.example.com/api">
+      <div class="btn-row"><button class="btn secondary" id="btn-save-conn">Save &amp; reconnect</button></div>
+    </div>
+  </details>
+
+  <div class="auth-wrap">
+    <div class="card">
+      <h2>Admin / superuser sign-in</h2>
+      <p class="sub">This page is for approving manufacturer registrations and managing entries — not for manufacturers themselves. Admin accounts are appointed by the superuser; the superuser account is seeded from the server's own configuration, not created here.</p>
+      <label for="li-email">Email</label>
+      <input id="li-email" type="email" placeholder="admin@pharmdetect.com">
+      <label for="li-password">Password</label>
+      <input id="li-password" type="password" placeholder="••••••••">
+      <div class="btn-row"><button class="btn" id="btn-login" style="width:100%;">Log in</button></div>
+      <div class="error-text" id="auth-error"></div>
+    </div>
+  </div>
+</div>
+
+<div class="app" id="main-screen" style="display:none;">
+  <div class="hero">
+    <div class="hero-left">
+      <div class="glyph">Rx</div>
+      <div>
+        <h1>Pharmaceutical Database — Admin</h1>
+        <p>Approve manufacturers and correct medication entries.</p>
+      </div>
+    </div>
+    <div class="session-box">
+      <div class="who"><div class="email" id="session-email">—</div><div class="role" id="session-role">—</div></div>
+      <button class="btn ghost" id="btn-logout">Log out</button>
+    </div>
+  </div>
+  <div class="badge" id="conn-badge2"><span class="dot"></span><span id="conn-text2">Checking connection…</span></div>
+
+  <div class="card">
+    <h2>Pending manufacturer registrations</h2>
+    <p class="sub">Approve or reject companies waiting for access to register medications.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Company</th><th class="mono">Manufacturer ID</th><th>Email</th><th>Requested</th><th>Action</th></tr></thead>
+        <tbody id="pending-body"></tbody>
+      </table>
+      <div class="empty" id="pending-empty">No pending registrations.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>All manufacturer accounts</h2>
+    <p class="sub">Oversight view of every registered company and its current status.</p>
+    <div class="btn-row" style="margin-top:0;margin-bottom:10px;"><button class="btn ghost small" id="btn-refresh-accounts">Refresh</button></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Company</th><th class="mono">Manufacturer ID</th><th>Email</th><th>Status</th><th id="acct-action-header" style="display:none;">Action</th></tr></thead>
+        <tbody id="accounts-body"></tbody>
+      </table>
+      <div class="empty" id="accounts-empty">No manufacturer accounts yet.</div>
+    </div>
+  </div>
+
+  <div class="section-title">Medication entries</div>
+  <div class="card">
+    <h2>All registered medications</h2>
+    <p class="sub">Every medication across every manufacturer. Edit to correct a data-entry error; delete to remove an erroneous entry entirely.</p>
+    <div class="btn-row" style="margin-top:0;margin-bottom:10px;"><button class="btn ghost small" id="btn-refresh-meds">Refresh</button></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Medication</th><th class="mono">Product ID</th><th>Mfg ID</th><th>Batch</th><th>Year</th><th>Life</th><th>Sold</th><th>Actions</th>
+        </tr></thead>
+        <tbody id="meds-body"></tbody>
+      </table>
+      <div class="empty" id="meds-empty">No medications registered yet.</div>
+    </div>
+  </div>
+
+  <div id="superuser-section" style="display:none;">
+    <div class="section-title">Superuser controls</div>
+    <div class="card superuser">
+      <h2>Appoint a new admin <span class="tag-su">SUPERUSER ONLY</span></h2>
+      <p class="sub">Admins are appointed directly — no approval step, since you're vouching for them personally.</p>
+      <div class="row2">
+        <div><label for="na-email">Email</label><input id="na-email" type="email" placeholder="admin@pharmdetect.com"></div>
+        <div><label for="na-password">Temporary password</label><input id="na-password" type="password" placeholder="At least 8 characters"></div>
+      </div>
+      <div class="btn-row"><button class="btn secondary" id="btn-appoint-admin">Appoint admin</button></div>
+    </div>
+
+    <div class="card superuser">
+      <h2>All admin accounts <span class="tag-su">SUPERUSER ONLY</span></h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Email</th><th>Appointed</th><th>Action</th></tr></thead>
+          <tbody id="admins-body"></tbody>
+        </table>
+        <div class="empty" id="admins-empty">No admins appointed yet.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="edit-modal">
+  <div class="modal">
+    <h3>Edit medication</h3>
+    <p class="sub mono" id="edit-pid">—</p>
+    <label for="em-name">Medication name</label>
+    <input id="em-name">
+    <label for="em-batch">Batch / lot number</label>
+    <input id="em-batch">
+    <div class="row2">
+      <div><label for="em-year">Year of manufacture</label><input id="em-year" type="number"></div>
+      <div><label for="em-life">Shelf life (years)</label><input id="em-life" type="number"></div>
+    </div>
+    <label for="em-sold">Sold</label>
+    <select id="em-sold"><option value="false">No</option><option value="true">Yes</option></select>
+    <div class="btn-row">
+      <button class="btn" id="btn-save-edit">Save changes</button>
+      <button class="btn secondary" id="btn-cancel-edit">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  const DEFAULT_API_BASE_URL = 'http://localhost:3000/api';
+  let API_BASE_URL = DEFAULT_API_BASE_URL;
+  let TOKEN = null;
+  let USER = null;
+  let editingProductId = null;
+  const $ = id => document.getElementById(id);
+
+  function saveSession(){ try{ localStorage.setItem('pharmdetect_pharma_admin_token', TOKEN || ''); }catch(e){} }
+  function loadSession(){ try{ return localStorage.getItem('pharmdetect_pharma_admin_token') || null; }catch(e){ return null; } }
+  function clearSession(){ try{ localStorage.removeItem('pharmdetect_pharma_admin_token'); }catch(e){} }
+
+  function authHeaders(){
+    const h = { 'Content-Type': 'application/json' };
+    if (TOKEN) h['Authorization'] = 'Bearer ' + TOKEN;
+    return h;
+  }
+  async function apiGet(path){
+    const res = await fetch(API_BASE_URL + path, { headers: authHeaders() });
+    const data = await res.json().catch(()=>null);
+    if(!res.ok) throw new Error((data && data.error) || 'Request failed (' + res.status + ')');
+    return data;
+  }
+  async function apiPost(path, body){
+    const res = await fetch(API_BASE_URL + path, { method:'POST', headers: authHeaders(), body: JSON.stringify(body || {}) });
+    const data = await res.json().catch(()=>null);
+    if(!res.ok) throw new Error((data && data.error) || 'Request failed (' + res.status + ')');
+    return data;
+  }
+  async function apiPut(path, body){
+    const res = await fetch(API_BASE_URL + path, { method:'PUT', headers: authHeaders(), body: JSON.stringify(body || {}) });
+    const data = await res.json().catch(()=>null);
+    if(!res.ok) throw new Error((data && data.error) || 'Request failed (' + res.status + ')');
+    return data;
+  }
+  async function apiDelete(path){
+    const res = await fetch(API_BASE_URL + path, { method:'DELETE', headers: authHeaders() });
+    const data = await res.json().catch(()=>null);
+    if(!res.ok) throw new Error((data && data.error) || 'Request failed (' + res.status + ')');
+    return data;
+  }
+
+  async function checkConnection(){
+    for (const id of ['conn-badge','conn-badge2']){
+      const badge = $(id); if(!badge) continue;
+      const text = badge.querySelector('span:last-child');
+      try{
+        const res = await fetch(API_BASE_URL.replace(/\/api\/?$/, '/api/health'));
+        if(!res.ok) throw new Error('bad status');
+        badge.classList.remove('offline'); text.textContent = 'Connected to ' + API_BASE_URL;
+      }catch(e){
+        badge.classList.add('offline'); text.textContent = 'Not connected — check the API base URL';
+      }
+    }
+  }
+
+  function showToast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3200); }
+  function escapeHtml(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function showAuthError(msg){ const e=$('auth-error'); e.textContent=msg; e.classList.add('show'); }
+  function clearAuthError(){ $('auth-error').classList.remove('show'); }
+  function isSuperuser(){ return USER && USER.role === 'superuser'; }
+
+  function showMain(){
+    if (USER.role === 'manufacturer'){
+      showAuthError('This account is a manufacturer account — use pharmaceutical_database.html instead.');
+      TOKEN = null; USER = null; clearSession();
+      return;
+    }
+    $('auth-screen').style.display = 'none';
+    $('main-screen').style.display = 'block';
+    $('session-email').textContent = USER.email;
+    $('session-role').textContent = USER.role;
+    $('session-role').className = 'role ' + (isSuperuser() ? 'superuser' : '');
+    $('superuser-section').style.display = isSuperuser() ? 'block' : 'none';
+    $('acct-action-header').style.display = isSuperuser() ? 'table-cell' : 'none';
+    loadPending(); loadAccounts(); loadMedications();
+    if (isSuperuser()) loadAdmins();
+  }
+  function showAuth(){ $('auth-screen').style.display = 'block'; $('main-screen').style.display = 'none'; }
+
+  $('btn-login').addEventListener('click', async ()=>{
+    clearAuthError();
+    const email = $('li-email').value.trim(), password = $('li-password').value;
+    if(!email || !password){ showAuthError('Enter your email and password.'); return; }
+    try{
+      const data = await apiPost('/auth/login', { email, password });
+      TOKEN = data.token; USER = data.manufacturer; saveSession();
+      showMain();
+    }catch(e){ showAuthError(e.message); }
+  });
+  $('btn-logout').addEventListener('click', ()=>{ TOKEN=null; USER=null; clearSession(); showAuth(); });
+  $('btn-save-conn').addEventListener('click', ()=>{
+    const url = $('f-api-url').value.trim();
+    API_BASE_URL = (url || DEFAULT_API_BASE_URL).replace(/\/$/, '');
+    checkConnection();
+    showToast('Connection settings saved for this session.');
+  });
+
+  function sessionExpiredGuard(e){
+    if(String(e.message).toLowerCase().includes('invalid or expired session')){
+      showToast('Session expired — please log in again.');
+      $('btn-logout').click();
+      return true;
+    }
+    return false;
+  }
+
+  // ---------- pending manufacturer approvals ----------
+  async function loadPending(){
+    let rows = [];
+    try{ rows = await apiGet('/admin/pending-accounts'); }
+    catch(e){ if(!sessionExpiredGuard(e)) showToast('Could not load pending accounts: ' + e.message); }
+    const body = $('pending-body'); body.innerHTML='';
+    $('pending-empty').style.display = rows.length ? 'none' : 'block';
+    rows.forEach(a=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${escapeHtml(a.companyName)}</td>
+        <td class="mono">${escapeHtml(a.manufacturerId)}</td>
+        <td>${escapeHtml(a.email)}</td>
+        <td class="mono">${a.createdAt}</td>
+        <td>
+          <button class="btn approve small" data-id="${a.id}" data-action="approve">Approve</button>
+          <button class="btn danger small" data-id="${a.id}" data-action="reject">Reject</button>
+        </td>`;
+      body.appendChild(tr);
+    });
+    body.querySelectorAll('button').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        try{
+          await apiPost(`/admin/accounts/${btn.dataset.id}/${btn.dataset.action}`, {});
+          showToast(`Account ${btn.dataset.action}d.`);
+          loadPending(); loadAccounts();
+        }catch(e){ showToast('Action failed: ' + e.message); }
+      });
+    });
+  }
+
+  // ---------- all manufacturer accounts ----------
+  async function loadAccounts(){
+    let rows = [];
+    try{ rows = await apiGet('/admin/accounts'); }
+    catch(e){ if(!sessionExpiredGuard(e)) return; }
+    const body = $('accounts-body'); body.innerHTML='';
+    $('accounts-empty').style.display = rows.length ? 'none' : 'block';
+    rows.forEach(a=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${escapeHtml(a.companyName)}</td>
+        <td class="mono">${escapeHtml(a.manufacturerId)}</td>
+        <td>${escapeHtml(a.email)}</td>
+        <td><span class="pill ${a.status}">${a.status}</span></td>
+        <td>${isSuperuser() ? `<button class="btn danger small" data-id="${a.id}" data-action="deregister">Deregister</button>` : ''}</td>`;
+      body.appendChild(tr);
+    });
+    body.querySelectorAll('button[data-action="deregister"]').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        if(!confirm('Deregister this manufacturer? This removes their account permanently.')) return;
+        try{ await apiDelete(`/superuser/accounts/${btn.dataset.id}`); showToast('Deregistered.'); loadAccounts(); loadPending(); }
+        catch(e){ showToast('Failed: ' + e.message); }
+      });
+    });
+  }
+
+  // ---------- medications ----------
+  async function loadMedications(){
+    let rows = [];
+    try{ rows = await apiGet('/admin/medications'); }
+    catch(e){ if(!sessionExpiredGuard(e)) showToast('Could not load medications: ' + e.message); }
+    const body = $('meds-body'); body.innerHTML='';
+    $('meds-empty').style.display = rows.length ? 'none' : 'block';
+    rows.forEach(m=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${escapeHtml(m.medicationName)}</td>
+        <td class="mono">${m.productId}</td>
+        <td class="mono">${escapeHtml(m.manufacturerId)}</td>
+        <td class="mono">${escapeHtml(m.batchNumber || '—')}</td>
+        <td>${m.yearOfManufacture}</td>
+        <td>${m.expectedLifespan}y</td>
+        <td>${m.sold ? 'Yes' : 'No'}</td>
+        <td>
+          <button class="btn secondary small" data-id="${m.productId}" data-action="edit">Edit</button>
+          <button class="btn danger small" data-id="${m.productId}" data-action="delete">Delete</button>
+        </td>`;
+      tr.dataset.record = JSON.stringify(m);
+      body.appendChild(tr);
+    });
+    body.querySelectorAll('button[data-action="edit"]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const record = JSON.parse(btn.closest('tr').dataset.record);
+        openEditModal(record);
+      });
+    });
+    body.querySelectorAll('button[data-action="delete"]').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        if(!confirm(`Delete medication ${btn.dataset.id}? This cannot be undone.`)) return;
+        try{ await apiDelete(`/admin/medications/${btn.dataset.id}`); showToast('Deleted.'); loadMedications(); }
+        catch(e){ showToast('Failed: ' + e.message); }
+      });
+    });
+  }
+
+  function openEditModal(record){
+    editingProductId = record.productId;
+    $('edit-pid').textContent = 'Product ID: ' + record.productId;
+    $('em-name').value = record.medicationName;
+    $('em-batch').value = record.batchNumber || '';
+    $('em-year').value = record.yearOfManufacture;
+    $('em-life').value = record.expectedLifespan;
+    $('em-sold').value = record.sold ? 'true' : 'false';
+    $('edit-modal').classList.add('show');
+  }
+  $('btn-cancel-edit').addEventListener('click', ()=> $('edit-modal').classList.remove('show'));
+  $('btn-save-edit').addEventListener('click', async ()=>{
+    try{
+      await apiPut(`/admin/medications/${editingProductId}`, {
+        medicationName: $('em-name').value.trim(),
+        batchNumber: $('em-batch').value.trim() || null,
+        yearOfManufacture: Number($('em-year').value),
+        expectedLifespan: Number($('em-life').value),
+        sold: $('em-sold').value === 'true'
+      });
+      $('edit-modal').classList.remove('show');
+      showToast('Medication updated.');
+      loadMedications();
+    }catch(e){ showToast('Update failed: ' + e.message); }
+  });
+
+  $('btn-refresh-accounts').addEventListener('click', ()=>{ loadPending(); loadAccounts(); });
+  $('btn-refresh-meds').addEventListener('click', loadMedications);
+
+  // ---------- superuser: admins ----------
+  async function loadAdmins(){
+    let rows = [];
+    try{ rows = await apiGet('/superuser/accounts'); }
+    catch(e){ return; }
+    rows = rows.filter(u => u.role === 'admin');
+    const body = $('admins-body'); body.innerHTML='';
+    $('admins-empty').style.display = rows.length ? 'none' : 'block';
+    rows.forEach(a=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${escapeHtml(a.email)}</td><td class="mono">${a.createdAt}</td>
+        <td><button class="btn danger small" data-id="${a.id}">Deregister</button></td>`;
+      body.appendChild(tr);
+    });
+    body.querySelectorAll('button').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        if(!confirm('Deregister this admin account?')) return;
+        try{ await apiDelete(`/superuser/accounts/${btn.dataset.id}`); showToast('Admin deregistered.'); loadAdmins(); }
+        catch(e){ showToast('Failed: ' + e.message); }
+      });
+    });
+  }
+  $('btn-appoint-admin').addEventListener('click', async ()=>{
+    const email = $('na-email').value.trim(), password = $('na-password').value;
+    if(!email || !password){ showToast('Enter an email and password.'); return; }
+    try{
+      await apiPost('/superuser/admins', { email, password });
+      showToast(`Admin appointed: ${email}`);
+      $('na-email').value=''; $('na-password').value='';
+      loadAdmins();
+    }catch(e){ showToast('Could not appoint admin: ' + e.message); }
+  });
+
+  // ---------- init ----------
+  $('f-api-url').value = DEFAULT_API_BASE_URL;
+  checkConnection();
+
+  const existingToken = loadSession();
+  if (existingToken){
+    TOKEN = existingToken;
+    apiGet('/auth/me').then(u => { USER = u; showMain(); }).catch(()=> { clearSession(); showAuth(); });
+  } else {
+    showAuth();
+  }
+})();
+</script>
+</body>
+</html>

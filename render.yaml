@@ -1,0 +1,70 @@
+services:
+  - type: web
+    name: pharmdetect-pharma-server
+    runtime: node
+    rootDir: pharma-server
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    disk:
+      name: pharma-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: PORT
+        value: 3000
+      - key: DATA_DIR
+        value: /data
+      - key: API_KEY
+        generateValue: true
+      - key: JWT_SECRET
+        generateValue: true
+      - key: SUPERUSER_EMAIL
+        sync: false   # your own email — this becomes the developer superuser account
+      - key: SUPERUSER_PASSWORD
+        sync: false   # set a strong password; change it after first login if you want
+      - key: COUNTERFEIT_API_URL
+        sync: false   # set manually once the counterfeit server's URL is known
+      - key: COUNTERFEIT_API_KEY
+        sync: false   # must match the API_KEY set on pharmdetect-counterfeit-server
+
+  - type: web
+    name: pharmdetect-counterfeit-server
+    runtime: node
+    rootDir: counterfeit-server
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    disk:
+      name: counterfeit-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: PORT
+        value: 4000
+      - key: DATA_DIR
+        value: /data
+      - key: API_KEY
+        generateValue: true
+      - key: JWT_SECRET
+        generateValue: true
+      - key: SUPERUSER_EMAIL
+        sync: false   # can be the same developer account as the pharma server, or different
+      - key: SUPERUSER_PASSWORD
+        sync: false
+      - key: MOH_AGENCY_EMAIL
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: REPORT_FROM
+        sync: false
+      - key: REPORT_FREQUENCY
+        value: monthly

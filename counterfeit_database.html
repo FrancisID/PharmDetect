@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CEP Database — PharmDetect</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0E1A17; --ink-soft:#31463F; --paper:#F3F6F3; --panel:#FFFFFF; --line:rgba(14,26,23,0.12);
+    --accent:#0E7A5F; --accent-soft:#DCF0E6; --danger:#B4402A; --danger-soft:#F6E0DA;
+    --warn:#B07A1E; --warn-soft:#F5EAD5; --mono:'IBM Plex Mono',monospace; --sans:'Space Grotesk',sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:var(--sans);background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;}
+  .app{max-width:1000px;margin:0 auto;padding:26px 22px 70px;}
+  .hero{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:2px solid var(--ink);padding-bottom:16px;margin-bottom:14px;}
+  .hero-left{display:flex;align-items:center;gap:12px;}
+  .glyph{width:36px;height:36px;border:2px solid var(--ink);border-radius:8px;display:grid;place-items:center;font-family:var(--mono);font-size:12px;font-weight:600;flex-shrink:0;}
+  .hero h1{font-size:22px;margin:0;font-weight:700;}
+  .hero p{margin:2px 0 0;font-size:12.5px;color:var(--ink-soft);}
+  .session-box{display:flex;align-items:center;gap:10px;font-size:12.5px;}
+  .session-box .who{text-align:right;}
+  .session-box .who .email{font-weight:600;}
+  .session-box .who .role{color:var(--ink-soft);font-size:11px;font-family:var(--mono);text-transform:uppercase;}
+  .badge{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10.5px;background:var(--ink);color:var(--paper);padding:2px 8px;border-radius:20px;margin-bottom:18px;}
+  .badge .dot{width:7px;height:7px;border-radius:50%;background:#7FE0B8;}
+  .badge.offline .dot{background:#F0A0A0;}
+  details{margin-bottom:18px;}
+  summary{cursor:pointer;font-size:12.5px;color:var(--ink-soft);font-weight:600;}
+  .grid2{display:grid;grid-template-columns:1.1fr .9fr;gap:20px;}
+  @media(max-width:800px){.grid2{grid-template-columns:1fr;}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px;margin-bottom:20px;}
+  .card h2{font-size:15px;margin:0 0 4px;font-weight:600;}
+  .card .sub{font-size:12.5px;color:var(--ink-soft);margin:0 0 16px;}
+  label{display:block;font-size:12px;color:var(--ink-soft);margin:12px 0 4px;}
+  label:first-of-type{margin-top:0;}
+  input,select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:6px;font-family:var(--sans);font-size:13.5px;background:var(--paper);color:var(--ink);}
+  button.btn{font-family:var(--sans);font-size:13.5px;font-weight:600;padding:10px 16px;border-radius:6px;border:1px solid var(--ink);background:var(--ink);color:var(--paper);cursor:pointer;}
+  button.btn.secondary{background:var(--panel);color:var(--ink);}
+  button.btn.ghost{background:none;border-color:var(--line);color:var(--ink-soft);}
+  button.btn:disabled{opacity:.5;cursor:not-allowed;}
+  .btn-row{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);}
+  td.mono,th.mono{font-family:var(--mono);font-size:12px;}
+  .table-wrap{overflow-x:auto;margin-top:6px;max-height:420px;overflow-y:auto;}
+  .pill{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;font-family:var(--mono);}
+  .pill.expired,.pill.counterfeit{background:var(--danger-soft);color:var(--danger);}
+  .empty{padding:22px 10px;text-align:center;color:var(--ink-soft);font-size:13px;}
+  .foot-note{font-size:11.5px;color:var(--ink-soft);margin-top:6px;}
+  .status-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:13px;}
+  .status-row:last-child{border-bottom:none;}
+  .status-row .v{font-family:var(--mono);font-weight:600;}
+  .status-row .v.ok{color:var(--accent);}
+  .status-row .v.warn{color:var(--warn);}
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:11px 18px;border-radius:8px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:50;max-width:85%;text-align:center;}
+  .toast.show{opacity:1;}
+  .callout{background:var(--accent-soft);border:1px solid var(--accent);border-radius:8px;padding:12px 14px;font-size:12px;color:#0b4536;margin-top:14px;}
+  .callout.warn{background:var(--warn-soft);border-color:var(--warn);color:#5c4110;}
+  .stat-row{display:flex;gap:16px;margin-bottom:6px;}
+  .stat{flex:1;text-align:center;border:1px solid var(--line);border-radius:8px;padding:10px;}
+  .stat .n{font-family:var(--mono);font-size:20px;font-weight:600;display:block;}
+  .stat .l{font-size:11px;color:var(--ink-soft);}
+  .error-text{color:var(--danger);font-size:12.5px;margin-top:8px;display:none;}
+  .error-text.show{display:block;}
+  .auth-wrap{max-width:420px;margin:60px auto;}
+</style>
+</head>
+<body>
+<div class="app" id="auth-screen">
+  <div class="hero">
+    <div class="hero-left">
+      <div class="glyph">Rx</div>
+      <div>
+        <h1>CEP Database</h1>
+        <p>PharmDetect — Ministry of Health agency sign-in</p>
+      </div>
+    </div>
+  </div>
+  <div class="badge" id="conn-badge"><span class="dot"></span><span id="conn-text">Checking connection…</span></div>
+
+  <details>
+    <summary>Backend connection settings</summary>
+    <div class="card" style="margin-top:10px;">
+      <label for="f-api-url">CEP Database API URL</label>
+      <input id="f-api-url" placeholder="https://your-counterfeit-server.moh.example.gov/api">
+      <div class="btn-row"><button class="btn secondary" id="btn-save-conn">Save &amp; reconnect</button></div>
+      <div class="foot-note">This is a different server from the Pharmaceutical Database — the two are never hosted together.</div>
+    </div>
+  </details>
+
+  <div class="auth-wrap">
+    <div class="card">
+      <h2>Agency sign-in</h2>
+      <p class="sub">Log in with your Ministry of Health account.</p>
+      <label for="li-email">Email</label>
+      <input id="li-email" type="email" placeholder="you@moh.gov.om">
+      <label for="li-password">Password</label>
+      <input id="li-password" type="password" placeholder="••••••••">
+      <div class="btn-row"><button class="btn" id="btn-login" style="width:100%;">Log in</button></div>
+      <div class="error-text" id="auth-error"></div>
+    </div>
+
+    <div class="card">
+      <h2>New Ministry of Health staff account</h2>
+      <p class="sub">Registration requires approval from an administrator before you can log in. The developer's superuser account and any admins are set up separately by the system operator — this form is for regular staff access only.</p>
+      <label for="re-email">Email</label>
+      <input id="re-email" type="email" placeholder="you@moh.gov.om">
+      <label for="re-password">Password</label>
+      <input id="re-password" type="password" placeholder="At least 8 characters">
+      <div class="btn-row"><button class="btn secondary" id="btn-register" style="width:100%;">Request access</button></div>
+    </div>
+  </div>
+</div>
+
+<div class="app" id="main-screen" style="display:none;">
+  <div class="hero">
+    <div class="hero-left">
+      <div class="glyph">Rx</div>
+      <div>
+        <h1>CEP Database</h1>
+        <p>PharmDetect — Counterfeit and Expired Product Database, for the Ministry of Health monitoring agency.</p>
+      </div>
+    </div>
+    <div class="session-box">
+      <div class="who"><div class="email" id="session-email">—</div><div class="role" id="session-role">—</div></div>
+      <button class="btn ghost" id="btn-logout">Log out</button>
+    </div>
+  </div>
+  <div class="badge" id="conn-badge2"><span class="dot"></span><span id="conn-text2">Checking connection…</span></div>
+
+  <div class="grid2">
+    <div class="card">
+      <h2>Flagged medications</h2>
+      <p class="sub">Every scan the Detector App resolves to Counterfeit or Expired is reported here automatically by the Pharmaceutical Database server, with the GPS location of the sale attempt.</p>
+      <div class="stat-row">
+        <div class="stat"><span class="n" id="stat-total">0</span><span class="l">total flagged</span></div>
+        <div class="stat"><span class="n" id="stat-week">0</span><span class="l">last 7 days</span></div>
+        <div class="stat"><span class="n" id="stat-counterfeit">0</span><span class="l">counterfeit</span></div>
+        <div class="stat"><span class="n" id="stat-expired">0</span><span class="l">expired</span></div>
+      </div>
+      <div class="btn-row" style="margin-top:0;margin-bottom:14px;">
+        <button class="btn ghost" id="btn-refresh">Refresh</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th class="mono">Product ID</th><th>Verdict</th><th>Reason</th><th>GPS</th><th>Detected</th></tr></thead>
+          <tbody id="cf-table-body"></tbody>
+        </table>
+        <div class="empty" id="cf-empty">No counterfeit or expired medications detected yet.</div>
+      </div>
+      <div class="btn-row">
+        <button class="btn secondary" id="btn-export-csv">Export CSV</button>
+        <button class="btn ghost" id="btn-clear">Clear database (admin only)</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h2>Report to the Ministry of Health</h2>
+        <p class="sub">This server emails the monitoring agency automatically on its configured cadence — this panel shows status only.</p>
+        <div class="status-row"><span>Agency email</span><span class="v" id="agency-email">—</span></div>
+        <div class="status-row"><span>SMTP configured on server</span><span class="v" id="smtp-status">—</span></div>
+        <div class="status-row"><span>Report cadence</span><span class="v" id="cadence">—</span></div>
+        <div class="status-row"><span>Last report sent</span><span class="v" id="last-sent">—</span></div>
+        <div class="btn-row">
+          <button class="btn" id="btn-send-now">Send report now (admin only)</button>
+        </div>
+        <div class="callout" id="config-callout">Checking the server's reporting configuration…</div>
+      </div>
+
+      <div class="card" id="admin-card" style="display:none;">
+        <h2>Approve staff &amp; manage accounts</h2>
+        <p class="sub">Approving new Ministry of Health staff registrations, and (for the superuser) appointing admins, happens on the dedicated admin page.</p>
+        <div class="btn-row"><a class="btn secondary" href="counterfeit_admin.html" style="text-decoration:none;display:inline-block;">Open admin page</a></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  const DEFAULT_API_BASE_URL = 'http://localhost:4000/api';
+  let API_BASE_URL = DEFAULT_API_BASE_URL;
+  let TOKEN = null;
+  let AGENCY_USER = null;
+  const $ = id => document.getElementById(id);
+
+  function saveSession(){ try{ localStorage.setItem('pharmdetect_cep_token', TOKEN || ''); }catch(e){} }
+  function loadSession(){ try{ return localStorage.getItem('pharmdetect_cep_token') || null; }catch(e){ return null; } }
+  function clearSession(){ try{ localStorage.removeItem('pharmdetect_cep_token'); }catch(e){} }
+
+  function authHeaders(){
+    const h = { 'Content-Type': 'application/json' };
+    if (TOKEN) h['Authorization'] = 'Bearer ' + TOKEN;
+    return h;
+  }
+  async function apiGet(path){
+    const res = await fetch(API_BASE_URL + path, { headers: authHeaders() });
+    const data = await res.json().catch(()=>null);
+    if(!res.ok) throw new Error((data && data.error) || 'Request failed (' + res.status + ')');
+    return data;
+  }
+  async function apiPost(path, body){
+    const res = await fetch(API_BASE_URL + path, { method:'POST', headers: authHeaders(), body: JSON.stringify(body || {}) });
+    const data = await res.json().catch(()=>null);
+    if(!res.ok) throw new Error((data && data.error) || 'Request failed (' + res.status + ')');
+    return data;
+  }
+  async function apiDelete(path){
+    const res = await fetch(API_BASE_URL + path, { method:'DELETE', headers: authHeaders() });
+    const data = await res.json().catch(()=>null);
+    if(!res.ok) throw new Error((data && data.error) || 'Request failed (' + res.status + ')');
+    return data;
+  }
+
+  async function checkConnection(){
+    for (const id of ['conn-badge','conn-badge2']){
+      const badge = $(id); if(!badge) continue;
+      const text = badge.querySelector('span:last-child');
+      try{
+        const res = await fetch(API_BASE_URL.replace(/\/api\/?$/, '/api/health'));
+        if(!res.ok) throw new Error('bad status');
+        badge.classList.remove('offline'); text.textContent = 'Connected to ' + API_BASE_URL;
+      }catch(e){
+        badge.classList.add('offline'); text.textContent = 'Not connected — check the API base URL';
+      }
+    }
+  }
+
+  function showToast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3200); }
+  function escapeHtml(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function showAuthError(msg){ const e=$('auth-error'); e.textContent=msg; e.classList.add('show'); }
+  function clearAuthError(){ $('auth-error').classList.remove('show'); }
+
+  function isAdmin(){ return AGENCY_USER && (AGENCY_USER.role === 'admin' || AGENCY_USER.role === 'superuser'); }
+
+  function showMain(){
+    $('auth-screen').style.display = 'none';
+    $('main-screen').style.display = 'block';
+    $('session-email').textContent = AGENCY_USER.email;
+    $('session-role').textContent = AGENCY_USER.role;
+    $('admin-card').style.display = isAdmin() ? 'block' : 'none';
+    $('btn-clear').disabled = !isAdmin();
+    $('btn-send-now').disabled = !isAdmin();
+    renderTable(); renderStatus();
+  }
+  function showAuth(){
+    $('auth-screen').style.display = 'block';
+    $('main-screen').style.display = 'none';
+  }
+
+  $('btn-login').addEventListener('click', async ()=>{
+    clearAuthError();
+    const email = $('li-email').value.trim(), password = $('li-password').value;
+    if(!email || !password){ showAuthError('Enter your email and password.'); return; }
+    try{
+      const data = await apiPost('/auth/login', { email, password });
+      TOKEN = data.token; AGENCY_USER = data.user; saveSession();
+      showMain();
+    }catch(e){ showAuthError(e.message); }
+  });
+
+  $('btn-register').addEventListener('click', async ()=>{
+    clearAuthError();
+    const email = $('re-email').value.trim(), password = $('re-password').value;
+    if(!email || !password){ showAuthError('Enter an email and password.'); return; }
+    try{
+      const data = await apiPost('/auth/register', { email, password });
+      $('re-email').value=''; $('re-password').value='';
+      showToast(data.note || 'Registration received — awaiting administrator approval.');
+    }catch(e){ showAuthError(e.message); }
+  });
+
+  $('btn-logout').addEventListener('click', ()=>{
+    TOKEN = null; AGENCY_USER = null; clearSession();
+    showAuth();
+  });
+
+  $('btn-save-conn').addEventListener('click', ()=>{
+    const url = $('f-api-url').value.trim();
+    API_BASE_URL = (url || DEFAULT_API_BASE_URL).replace(/\/$/, '');
+    checkConnection();
+    showToast('Connection settings saved for this session.');
+  });
+
+  // ---------- data ----------
+  async function renderTable(){
+    let rows = [];
+    try{ rows = await apiGet('/counterfeit-reports'); }
+    catch(e){
+      if(String(e.message).toLowerCase().includes('invalid or expired session')){ showToast('Session expired — please log in again.'); $('btn-logout').click(); return; }
+      showToast('Could not load the CEP Database: ' + e.message);
+    }
+
+    const weekAgo = Date.now() - 7*24*60*60*1000;
+    $('stat-total').textContent = rows.length;
+    $('stat-week').textContent = rows.filter(r => new Date(r.detectedAt).getTime() >= weekAgo).length;
+    $('stat-counterfeit').textContent = rows.filter(r=>r.status==='COUNTERFEIT').length;
+    $('stat-expired').textContent = rows.filter(r=>r.status==='EXPIRED').length;
+
+    const body = $('cf-table-body'); body.innerHTML='';
+    $('cf-empty').style.display = rows.length ? 'none' : 'block';
+    rows.slice().reverse().forEach(r=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="mono">${r.productId}</td>
+        <td><span class="pill ${r.status === 'EXPIRED' ? 'expired' : 'counterfeit'}">${r.status}</span></td>
+        <td>${escapeHtml(r.reason)}</td>
+        <td class="mono">${r.gps}</td>
+        <td class="mono">${r.detectedAt}</td>
+      `;
+      body.appendChild(tr);
+    });
+  }
+
+  async function renderStatus(){
+    let status;
+    try{ status = await apiGet('/counterfeit-reports/status'); }
+    catch(e){ return; }
+
+    $('agency-email').textContent = status.agencyEmail || 'Not set';
+    $('smtp-status').textContent = status.smtpConfigured ? 'Yes' : 'No';
+    $('smtp-status').className = 'v ' + (status.smtpConfigured ? 'ok' : 'warn');
+    $('cadence').textContent = status.frequency === 'weekly' ? 'Weekly (Mondays)' : 'Monthly (1st of month)';
+    $('last-sent').textContent = status.lastSentPeriod ? `${status.lastSentPeriod} (${status.lastSentAt})` : 'Never';
+
+    const callout = $('config-callout');
+    if(status.agencyEmail && status.smtpConfigured){
+      callout.className = 'callout';
+      callout.textContent = `This server automatically emails ${status.agencyEmail} on a ${status.frequency} basis — it runs independently of any app or browser tab being open.`;
+    } else {
+      callout.className = 'callout warn';
+      callout.textContent = "Automatic reporting is not fully configured yet. Set MOH_AGENCY_EMAIL, SMTP_HOST, SMTP_USER and SMTP_PASS in this server's .env file, then restart it.";
+    }
+  }
+
+  $('btn-send-now').addEventListener('click', async ()=>{
+    try{
+      const result = await apiPost('/counterfeit-reports/send-now', {});
+      if(result.sent) showToast(`Report for ${result.periodKey} sent (${result.count} record${result.count===1?'':'s'}).`);
+      else showToast(result.reason || 'Report not sent — check server SMTP configuration.');
+      renderStatus();
+    }catch(e){ showToast('Send failed: ' + e.message); }
+  });
+
+  $('btn-export-csv').addEventListener('click', async ()=>{
+    try{
+      const res = await fetch(API_BASE_URL + '/counterfeit-reports/export.csv', { headers: authHeaders() });
+      if(!res.ok) throw new Error('Export failed (' + res.status + ')');
+      const blob = await res.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'counterfeit_and_fake_medications.csv';
+      a.click();
+    }catch(e){ showToast('Export failed: ' + e.message); }
+  });
+
+  $('btn-clear').addEventListener('click', async ()=>{
+    if(!confirm('Clear the CEP Database? This does not affect the Pharmaceutical Database.')) return;
+    try{ await apiDelete('/counterfeit-reports'); }
+    catch(e){ showToast('Clear failed: ' + e.message); return; }
+    renderTable();
+    showToast('CEP Database cleared.');
+  });
+
+  $('btn-refresh').addEventListener('click', ()=>{ renderTable(); renderStatus(); });
+
+  // ---------- init ----------
+  $('f-api-url').value = DEFAULT_API_BASE_URL;
+  checkConnection();
+
+  const existingToken = loadSession();
+  if (existingToken){
+    TOKEN = existingToken;
+    apiGet('/auth/me').then(u => { AGENCY_USER = u; showMain(); })
+      .catch(()=> { clearSession(); showAuth(); });
+  } else {
+    showAuth();
+  }
+})();
+</script>
+</body>
+</html>
