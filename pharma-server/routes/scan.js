@@ -1,7 +1,6 @@
 const express = require('express');
 const fetch = require('node-fetch');
 const pharmaDb = require('../db/pharmaDb');
-const requireApiKey = require('../middleware/requireApiKey');
 
 const router = express.Router();
 
@@ -40,7 +39,7 @@ async function relayToCounterfeitDb({ productId, status, reason, gps }) {
 // POST /api/scan  { productId, gps }
 // Read-only from the Pharmaceutical Database's point of view — never marks a
 // medication sold. A genuine, unsold medication comes back PENDING_PURCHASE.
-router.post('/scan', requireApiKey, async (req, res) => {
+router.post('/scan', async (req, res) => {
   const { productId, gps } = req.body || {};
   if (!productId) return res.status(400).json({ error: 'productId is required' });
   const location = gps || 'unknown';
@@ -73,7 +72,7 @@ router.post('/scan', requireApiKey, async (req, res) => {
 });
 
 // POST /api/purchase  { productId, gps } — call only after the buyer confirms
-router.post('/purchase', requireApiKey, async (req, res) => {
+router.post('/purchase', async (req, res) => {
   const { productId, gps } = req.body || {};
   if (!productId) return res.status(400).json({ error: 'productId is required' });
   const location = gps || 'unknown';

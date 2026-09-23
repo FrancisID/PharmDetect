@@ -1,0 +1,13 @@
+node_modules/
+data/
+*.log
+.env
+.DS_Store
+
+# Mobile app build artifacts (mobile-app/ has its own more specific .gitignore too)
+mobile-app/www/app.bundle.js
+mobile-app/android/app/build/
+mobile-app/android/.gradle/
+mobile-app/android/local.properties
+mobile-app/ios/App/Pods/
+mobile-app/ios/App/build/

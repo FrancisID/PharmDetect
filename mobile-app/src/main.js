@@ -4,7 +4,7 @@
   import { Geolocation } from '@capacitor/geolocation';
 
   // Edit this before deploying so the app works without any manual setup.
-  const DEFAULT_API_BASE_URL = 'http://localhost:3000/api';
+  const DEFAULT_API_BASE_URL = 'https://pharmdetect-pharma-server.onrender.com/api';
 
   let API_BASE_URL = DEFAULT_API_BASE_URL;
   let API_KEY = '';
