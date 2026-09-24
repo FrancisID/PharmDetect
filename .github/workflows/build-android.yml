@@ -32,14 +32,20 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Set up the Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          packages: |
-            platform-tools
-            platforms;android-35
-            build-tools;35.0.0
-          accept-android-sdk-license: true
+      # GitHub's own ubuntu-latest runners already ship a working Android SDK
+      # (that's what $ANDROID_HOME points to below) — we install the exact
+      # platform/build-tools this project needs directly, rather than relying
+      # on the third-party android-actions/setup-android action, which has a
+      # long-standing bug trying to install a legacy "tools" package that no
+      # longer exists in Google's SDK repository.
+      - name: Ensure the required Android SDK platform and build-tools are installed
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null || true
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \
+            "platforms;android-36" \
+            "build-tools;36.0.0" \
+            "build-tools;35.0.0" \
+            "platform-tools"
 
       - name: Install npm dependencies
         run: npm install
