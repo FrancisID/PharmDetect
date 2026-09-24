@@ -1,71 +1,25 @@
-name: Build Android APK
-
-# Runs automatically whenever mobile-app/ changes on main, and can also be
-# triggered manually from the Actions tab (the "Run workflow" button) for a
-# fresh build without needing to push a new commit.
-on:
-  push:
-    branches: [main]
-    paths:
-      - 'mobile-app/**'
-  workflow_dispatch: {}
-
-jobs:
-  build-android:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: mobile-app
-
-    steps:
-      - name: Check out the repo
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Set up JDK 21 (required by the Android Gradle Plugin)
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-
-      # GitHub's own ubuntu-latest runners already ship a working Android SDK
-      # (that's what $ANDROID_HOME points to below) — we install the exact
-      # platform/build-tools this project needs directly, rather than relying
-      # on the third-party android-actions/setup-android action, which has a
-      # long-standing bug trying to install a legacy "tools" package that no
-      # longer exists in Google's SDK repository.
-      - name: Ensure the required Android SDK platform and build-tools are installed
+      - name: Ensure the required Android SDK packages are installed
+        shell: bash
         run: |
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null || true
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \
+          set -euo pipefail
+
+          SDKMANAGER="${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager"
+
+          if [ ! -x "$SDKMANAGER" ]; then
+            SDKMANAGER="$(command -v sdkmanager || true)"
+          fi
+
+          if [ -z "$SDKMANAGER" ] || [ ! -x "$SDKMANAGER" ]; then
+            echo "Could not find Android sdkmanager"
+            find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f -print 2>/dev/null || true
+            exit 1
+          fi
+
+          echo "Using sdkmanager: $SDKMANAGER"
+
+          yes | "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --licenses >/dev/null || true
+
+          "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --install \
+            "platform-tools" \
             "platforms;android-36" \
-            "build-tools;36.0.0" \
-            "build-tools;35.0.0" \
-            "platform-tools"
-
-      - name: Install npm dependencies
-        run: npm install
-
-      - name: Build the web bundle
-        run: npm run build
-
-      - name: Sync the web assets into the native Android project
-        run: npx cap sync android
-
-      - name: Make gradlew executable
-        run: chmod +x android/gradlew
-
-      - name: Build the debug APK
-        working-directory: mobile-app/android
-        run: ./gradlew assembleDebug
-
-      - name: Upload the APK as a downloadable artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: PharmDetect-debug-apk
-          path: mobile-app/android/app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
+            "build-tools;36.0.0"
