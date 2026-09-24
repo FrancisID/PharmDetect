@@ -2,6 +2,7 @@
   import { Capacitor } from '@capacitor/core';
   import { BarcodeScanner, BarcodeFormat } from '@capacitor-mlkit/barcode-scanning';
   import { Geolocation } from '@capacitor/geolocation';
+  import jsQR from 'jsqr';
 
   // Edit this before deploying so the app works without any manual setup.
   const DEFAULT_API_BASE_URL = 'https://pharmdetect-pharma-server.onrender.com/api';
@@ -46,7 +47,7 @@
     }
   }
 
-  function showToast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000); }
+  function showToast(msg, duration){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), duration || 3000); }
   function nowStamp(){ return new Date().toLocaleString(); }
 
   // ---------- GPS: native Geolocation plugin on-device, browser API in web ----------
@@ -188,14 +189,32 @@
   // Web/browser fallback (used automatically outside the packaged app, e.g. while
   // testing in a desktop or mobile browser): getUserMedia + jsQR, exactly as before.
   const video = $('video'), canvas = $('canvas'), ctx = canvas.getContext('2d');
-  async function startWebScan(){
-    try{
-      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      video.srcObject = stream; video.style.display='block';
-      $('scan-placeholder').style.display='none'; $('scan-frame').style.display='block';
-      video.play(); webScanning = true; $('scan-btn-label').textContent='Stop scan';
-      requestAnimationFrame(webTick); requestGps();
-    }catch(e){ showToast('Camera unavailable — use upload or manual entry instead.'); }
+  function startWebScan(){
+    if (typeof jsQR === 'undefined') {
+      showToast('QR decoder failed to initialize (jsQR is bundled directly into this app, not loaded from a CDN). This should not normally happen — please report this.', 8000);
+      return;
+    }
+    return startWebScanAttempt();
+  }
+  async function startWebScanAttempt(){
+    const attempts = [
+      { video: { facingMode: { ideal: 'environment' } } },
+      { video: true }
+    ];
+    let lastError = null;
+    for (const constraints of attempts) {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+        video.srcObject = stream; video.style.display='block';
+        $('scan-placeholder').style.display='none'; $('scan-frame').style.display='block';
+        video.play(); webScanning = true; $('scan-btn-label').textContent='Stop scan';
+        requestAnimationFrame(webTick); requestGps();
+        return;
+      } catch(e) {
+        lastError = e;
+      }
+    }
+    showToast(`Camera unavailable (${lastError && lastError.name ? lastError.name : 'unknown error'}: ${lastError && lastError.message ? lastError.message : 'no details'}) — use upload or manual entry instead.`, 8000);
   }
   function stopWebScan(){
     webScanning=false;
@@ -203,14 +222,26 @@
     video.style.display='none'; $('scan-frame').style.display='none';
     $('scan-placeholder').style.display='block'; $('scan-btn-label').textContent='Scan';
   }
+  let webTicksAttempted = 0, webTicksWithFrame = 0;
   function webTick(){
     if(!webScanning) return;
-    if(video.readyState === video.HAVE_ENOUGH_DATA){
-      canvas.width=video.videoWidth; canvas.height=video.videoHeight;
-      ctx.drawImage(video,0,0,canvas.width,canvas.height);
-      const imageData = ctx.getImageData(0,0,canvas.width,canvas.height);
-      const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
-      if(code && code.data){ stopWebScan(); $('f-manual').value = code.data; runScan(code.data); return; }
+    try{
+      if(video.readyState === video.HAVE_ENOUGH_DATA){
+        webTicksWithFrame++;
+        canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+        ctx.drawImage(video,0,0,canvas.width,canvas.height);
+        const imageData = ctx.getImageData(0,0,canvas.width,canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
+        if(code && code.data){ stopWebScan(); $('f-manual').value = code.data; runScan(code.data); return; }
+      }
+      webTicksAttempted++;
+      if (webTicksAttempted === 300 && webTicksWithFrame > 0) {
+        showToast('Still scanning — try moving closer/farther, improving lighting, or reducing glare if scanning off a screen.', 4000);
+      }
+    }catch(e){
+      stopWebScan();
+      showToast(`Scan decoder error (${e.name || 'Error'}: ${e.message || 'unknown'}) — use upload or manual entry instead.`, 8000);
+      return;
     }
     requestAnimationFrame(webTick);
   }

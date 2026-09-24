@@ -1,0 +1,59 @@
+name: Build Android APK
+
+# Runs automatically whenever mobile-app/ changes on main, and can also be
+# triggered manually from the Actions tab (the "Run workflow" button) for a
+# fresh build without needing to push a new commit.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'mobile-app/**'
+  workflow_dispatch: {}
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile-app
+
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Set up JDK 21 (required by the Android Gradle Plugin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Set up the Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install npm dependencies
+        run: npm install
+
+      - name: Build the web bundle
+        run: npm run build
+
+      - name: Sync the web assets into the native Android project
+        run: npx cap sync android
+
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+
+      - name: Build the debug APK
+        working-directory: mobile-app/android
+        run: ./gradlew assembleDebug
+
+      - name: Upload the APK as a downloadable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PharmDetect-debug-apk
+          path: mobile-app/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error

@@ -241,7 +241,10 @@
   async function apiPost(path, body){
     const res = await fetch(API_BASE_URL + path, { method:'POST', headers: authHeaders(), body: JSON.stringify(body || {}) });
     const data = await res.json().catch(()=>null);
-    if(!res.ok) throw new Error((data && data.error) || 'Request failed (' + res.status + ')');
+    if(!res.ok){
+      const message = (data && data.detail) ? `${data.error || 'Request failed'}: ${data.detail}` : ((data && data.error) || 'Request failed (' + res.status + ')');
+      throw new Error(message);
+    }
     return data;
   }
   async function apiPut(path, body){
