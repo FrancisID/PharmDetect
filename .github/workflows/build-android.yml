@@ -1,3 +1,4 @@
+name: Build Android APK
       - name: Ensure the required Android SDK packages are installed
         shell: bash
         run: |
