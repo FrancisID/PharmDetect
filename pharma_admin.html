@@ -370,7 +370,10 @@
         <td class="mono">${escapeHtml(a.manufacturerId)}</td>
         <td>${escapeHtml(a.email)}</td>
         <td><span class="pill ${a.status}">${a.status}</span></td>
-        <td>${isSuperuser() ? `<button class="btn danger small" data-id="${a.id}" data-action="deregister">Deregister</button>` : ''}</td>`;
+        <td>
+          <button class="btn small" data-id="${a.id}" data-action="reset-password">Reset password</button>
+          ${isSuperuser() ? `<button class="btn danger small" data-id="${a.id}" data-action="deregister">Deregister</button>` : ''}
+        </td>`;
       body.appendChild(tr);
     });
     body.querySelectorAll('button[data-action="deregister"]').forEach(btn=>{
@@ -378,6 +381,17 @@
         if(!confirm('Deregister this manufacturer? This removes their account permanently.')) return;
         try{ await apiDelete(`/superuser/accounts/${btn.dataset.id}`); showToast('Deregistered.'); loadAccounts(); loadPending(); }
         catch(e){ showToast('Failed: ' + e.message); }
+      });
+    });
+    body.querySelectorAll('button[data-action="reset-password"]').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        const newPassword = prompt('Enter a new password for this manufacturer (min 8 characters). Share it with them securely — it cannot be recovered later.');
+        if(newPassword === null) return;
+        if(newPassword.length < 8){ showToast('Password must be at least 8 characters.'); return; }
+        try{
+          await apiPost(`/admin/accounts/${btn.dataset.id}/reset-password`, { newPassword });
+          showToast('Password reset. Share the new password with the manufacturer directly.');
+        }catch(e){ showToast('Reset failed: ' + e.message); }
       });
     });
   }
@@ -461,14 +475,28 @@
     rows.forEach(a=>{
       const tr = document.createElement('tr');
       tr.innerHTML = `<td>${escapeHtml(a.email)}</td><td class="mono">${a.createdAt}</td>
-        <td><button class="btn danger small" data-id="${a.id}">Deregister</button></td>`;
+        <td>
+          <button class="btn small" data-id="${a.id}" data-action="reset-password">Reset password</button>
+          <button class="btn danger small" data-id="${a.id}" data-action="deregister">Deregister</button>
+        </td>`;
       body.appendChild(tr);
     });
-    body.querySelectorAll('button').forEach(btn=>{
+    body.querySelectorAll('button[data-action="deregister"]').forEach(btn=>{
       btn.addEventListener('click', async ()=>{
         if(!confirm('Deregister this admin account?')) return;
         try{ await apiDelete(`/superuser/accounts/${btn.dataset.id}`); showToast('Admin deregistered.'); loadAdmins(); }
         catch(e){ showToast('Failed: ' + e.message); }
+      });
+    });
+    body.querySelectorAll('button[data-action="reset-password"]').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        const newPassword = prompt('Enter a new password for this admin (min 8 characters). Share it with them securely — it cannot be recovered later.');
+        if(newPassword === null) return;
+        if(newPassword.length < 8){ showToast('Password must be at least 8 characters.'); return; }
+        try{
+          await apiPost(`/superuser/accounts/${btn.dataset.id}/reset-password`, { newPassword });
+          showToast('Password reset. Share the new password with the admin directly.');
+        }catch(e){ showToast('Reset failed: ' + e.message); }
       });
     });
   }

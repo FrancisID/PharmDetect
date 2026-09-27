@@ -31,6 +31,23 @@ router.post('/admin/accounts/:id/reject', requireAuth('admin'), (req, res) => {
   res.json(users.setStatus(target.id, 'rejected'));
 });
 
+// POST /api/admin/accounts/:id/reset-password — set a new password for a
+// manufacturer that has forgotten theirs. Requires admin (or superuser).
+// The new password is chosen by the admin and must be relayed to the
+// manufacturer through some out-of-band channel (phone, email, in person);
+// there is no self-service "forgot password" flow since pharma-server has
+// no SMTP configured.
+router.post('/admin/accounts/:id/reset-password', requireAuth('admin'), async (req, res) => {
+  const target = users.getById(req.params.id);
+  if (!target || target.role !== 'manufacturer') return res.status(404).json({ error: 'Manufacturer account not found' });
+  const { newPassword } = req.body || {};
+  if (!newPassword || newPassword.length < 8) {
+    return res.status(400).json({ error: 'newPassword is required and must be at least 8 characters' });
+  }
+  const account = await users.resetPassword(target.id, newPassword);
+  res.json(account);
+});
+
 // ---------- superuser only : manage admins, deregister anyone ----------
 
 // GET /api/superuser/accounts — every account on this server, any role
@@ -70,6 +87,20 @@ router.post('/superuser/accounts/:id/reject', requireAuth('superuser'), (req, re
   const target = users.getById(req.params.id);
   if (!target) return res.status(404).json({ error: 'Account not found' });
   res.json(users.setStatus(target.id, 'rejected'));
+});
+
+// POST /api/superuser/accounts/:id/reset-password — superuser can reset the
+// password of any non-superuser account (manufacturer or admin).
+router.post('/superuser/accounts/:id/reset-password', requireAuth('superuser'), async (req, res) => {
+  const target = users.getById(req.params.id);
+  if (!target) return res.status(404).json({ error: 'Account not found' });
+  if (target.role === 'superuser') return res.status(403).json({ error: 'Cannot reset a superuser password through this endpoint' });
+  const { newPassword } = req.body || {};
+  if (!newPassword || newPassword.length < 8) {
+    return res.status(400).json({ error: 'newPassword is required and must be at least 8 characters' });
+  }
+  const account = await users.resetPassword(target.id, newPassword);
+  res.json(account);
 });
 
 // ---------- admin (and superuser) : oversee and modify ANY medication entry ----------

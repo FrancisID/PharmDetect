@@ -39,6 +39,7 @@ const listByRoleStmt = db.prepare('SELECT * FROM users WHERE role = ? ORDER BY i
 const listByRoleStatusStmt = db.prepare('SELECT * FROM users WHERE role = ? AND status = ? ORDER BY id DESC');
 const listAllStmt = db.prepare('SELECT * FROM users ORDER BY id DESC');
 const setStatusStmt = db.prepare('UPDATE users SET status = ? WHERE id = ?');
+const setPasswordHashStmt = db.prepare('UPDATE users SET password_hash = ? WHERE id = ?');
 const deleteStmt = db.prepare('DELETE FROM users WHERE id = ?');
 const countSuperusersStmt = db.prepare("SELECT COUNT(*) AS n FROM users WHERE role = 'superuser'");
 
@@ -91,6 +92,11 @@ module.exports = {
   listAdmins() { return listByRoleStmt.all('admin').map(toApiShape); },
   listAll() { return listAllStmt.all().map(toApiShape); },
   setStatus(id, status) { setStatusStmt.run(status, id); return toApiShape(getByIdStmt.get(id)); },
+  async resetPassword(id, newPassword) {
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    setPasswordHashStmt.run(passwordHash, id);
+    return toApiShape(getByIdStmt.get(id));
+  },
   deleteUser(id) { deleteStmt.run(id); },
   toApiShape
 };
