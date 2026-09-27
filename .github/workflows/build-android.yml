@@ -24,7 +24,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Set up JDK 21 (required by the Android Gradle Plugin)
         uses: actions/setup-java@v4
@@ -32,8 +32,19 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Set up the Android SDK
-        uses: android-actions/setup-android@v3
+      # GitHub's own ubuntu-latest runners already ship a working Android SDK
+      # (that's what $ANDROID_HOME points to below) — we just need to make sure
+      # the exact platform and build-tools this project needs are installed,
+      # rather than depending on a third-party action to set up the SDK from
+      # scratch, which has been an unreliable extra point of failure.
+      - name: Ensure the required Android SDK platform and build-tools are installed
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null || true
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \
+            "platforms;android-36" \
+            "build-tools;36.0.0" \
+            "build-tools;35.0.0" \
+            "platform-tools"
 
       - name: Install npm dependencies
         run: npm install
